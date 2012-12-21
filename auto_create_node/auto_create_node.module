@@ -1,0 +1,62 @@
+<?php
+
+/**  
+  * Implementation of hook_menu().  
+ */  
+function auto_create_node_menu() {  
+  $items['example'] = array(  
+    'title' => 'Create node automatically',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('auto_create_node_hello'),  
+    'access callback' => TRUE,  
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
+
+function auto_create_node_hello() {
+    
+  $types = node_type_get_types();  
+  foreach($types as $node_type) {   
+     $options[$node_type->type] = $node_type->name;  
+  }
+  
+  $form['auto_create_node_types'] = array(   
+      '#type' => 'radios',   
+      '#title' => t('Create automatically new node'),   
+      '#options' => $options,
+      '#default_value' => 'article',
+  );
+  
+  $form['submit'] = array(  
+    '#type' => 'submit',  
+    '#value' => t('Create new node'),  
+  );
+
+  return $form;
+}
+
+function auto_create_node_hello_submit($form, &$form_state) {  
+//  dsm($form_state);
+//  $name = $form_state['values']['auto_create_node_types'];  
+//  $value = $form_state['complete form']['auto_create_node_types']['#options'][$name];
+//  drupal_set_message(t('You chose: %name', array('%name' => $value)));
+    
+  global $user;
+  
+  $node = new stdClass();
+  $node->title = "YOUR TITLE";
+  $node->body['und'][0]['value'] = "YOUR BODY";
+  $node->type = $form_state['values']['auto_create_node_types'];
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+  $node->uid = $user->uid; 
+  $node->status = 1; //(1 or 0): published or not
+  $node->comment = 1; //2 = comments on, 1 = comments off 
+
+  $node = node_submit($node); // Prepare node for saving
+  node_save($node);
+  
+  drupal_set_message(t('Node is created successfully'));
+}

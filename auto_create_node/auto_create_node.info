@@ -1,0 +1,6 @@
+name = Auto Creating New Node
+description = "Allows user to automatically create a new node based on selected content type"
+package = Custom Module
+core = 7.x
+
+files[] = auto_create_node.module

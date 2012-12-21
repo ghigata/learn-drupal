@@ -1,0 +1,258 @@
+<?php
+
+/**
+ * Implementation of of hook_install().
+ */
+ 
+ function myschema_install(){
+     // Create Tables
+    drupal_install_schema('myschema');
+ }
+ 
+ /**
+  * Implementation of hook_uninstall().
+  */
+  function myschema_uninstall(){
+    drupal_uninstall_schema('myschema');
+  }
+  
+  /**
+   * Implementation of hook_schema()
+   */
+  function myschema_schema() {
+  $schema = array();
+
+  $schema['employee'] = array(
+    'description' => t('Employee Table'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Employee ID'),
+        'type' => 'serial',
+        'unsigned' => true,
+        'not null' => true,
+      ),
+      'name' => array(
+        'description' => t('Employee Name'),
+        'type' => 'varchar',
+        'length' => 200,
+        'not null' => true,
+      ),
+      'address' => array(
+        'description' => t('Employee Address'),
+        'type' => 'varchar',
+        'length' => 200,
+        'not null' => true,
+      ),
+      'age' => array(
+        'description' => t('Employee Age'),
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => true,
+      ),
+      'phone' => array(
+        'description' => t('Employee Phone'),
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => true,
+      ),
+    ),
+    'indexes' => array(
+      'name' => array('name'),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'id' => array('id'),
+    ),
+  );         
+        
+  return $schema;
+
+}
+
+/**  
+  * Implementation of hook_menu().  
+ */  
+function myschema_menu() {  
+  $items['learnschema'] = array(  
+    'title' => 'Add Employee',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('myschema_form'),  
+    'access callback' => TRUE,  
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['viewall'] = array(  
+    'title' => 'All Employees',
+    'page callback' => 'myschema_viewall',  
+    'access callback' => TRUE,  
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['edit/%'] = array(  
+    'title' => 'Edit Employees',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('myschema_edit_form', 1),  
+    'access callback' => TRUE,  
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['delete/%'] = array(  
+    'title' => 'Edit Employees',
+    'page callback' => 'myschema_delete',
+    'page arguments' => array(1),  
+    'access callback' => TRUE,  
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
+
+function myschema_form() {
+  
+  $form['name'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Name'),
+      '#default_value' => 'Your employee',
+      '#required' => TRUE,
+  );
+  
+  $form['address'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Address'),
+      '#default_value' => 'Your address',
+      '#required' => TRUE,
+  );
+  
+  $form['age'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Age'),
+      '#default_value' => 20,
+      '#maxlength' => 3,
+      '#required' => TRUE,
+  );
+  
+  $form['phone'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Phone'),
+      '#default_value' => 'Your phone',
+      '#maxlength' => 20,
+      '#required' => TRUE,
+  );
+  
+  $form['submit'] = array(  
+    '#type' => 'submit',  
+    '#value' => t('Save'),  
+  );
+
+  return $form;
+}
+
+function myschema_form_submit($form, &$form_state) {  
+  $data = array(
+    'name' => $form_state['values']['name'],
+    'address' => $form_state['values']['address'],
+    'age' => $form_state['values']['age'],
+    'phone' => $form_state['values']['phone'],
+  );
+  drupal_write_record('employee', $data);
+  
+  drupal_set_message(t('New record is created successfully'));
+}
+
+function myschema_viewall() {
+    $query = db_select('employee', 'n')
+      -> fields('n', array('id', 'name', 'address', 'age', 'phone'));
+   
+    $result = $query -> execute();
+    $output = '';
+    $output .= '<table border="1">';
+    while($record = $result->fetchAssoc()) {
+        $output .= '<tr>';
+        $output .= '<td>'.$record['id'].'</td>';
+        $output .= '<td>'.$record['name'].'</td>';
+        $output .= '<td>'.$record['address'].'</td>';
+        $output .= '<td>'.$record['age'].'</td>';
+        $output .= '<td>'.$record['phone'].'</td>';
+        $output .= '<td><a href="edit/'.$record['id'].'">Edit</td>';
+        $output .= '<td><a href="delete/'.$record['id'].'">Delete</td>';
+        $output .= '</tr>';
+    }
+    $output .= '</table>';
+    return $output;
+}
+
+function myschema_edit_form() {
+  
+  $query = db_select('employee', 'n')
+      -> condition('id', arg(1))
+      -> fields('n', array('id', 'name', 'address', 'age', 'phone'))
+      -> execute();
+      
+  $record = $query -> fetchAssoc();
+  
+  $form['id'] = array(   
+      '#type' => 'hidden',   
+      '#title' => t('Employee ID'),
+      '#default_value' => $record['id'],
+      '#required' => FALSE,
+  );
+  
+  $form['name'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Name'),
+      '#default_value' => $record['name'],
+      '#required' => TRUE,
+  );
+  
+  $form['address'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Address'),
+      '#default_value' => $record['address'],
+      '#required' => TRUE,
+  );
+  
+  $form['age'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Age'),
+      '#default_value' => $record['age'],
+      '#maxlength' => 3,
+      '#required' => TRUE,
+  );
+  
+  $form['phone'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('Employee Phone'),
+      '#default_value' => $record['phone'],
+      '#maxlength' => 20,
+      '#required' => TRUE,
+  );
+  
+  $form['submit'] = array(  
+    '#type' => 'submit',  
+    '#value' => t('Save'),  
+  );
+
+  return $form;
+}
+
+function myschema_edit_form_submit($form, &$form_state) {
+  db_update('employee')
+    ->fields(array(
+                'name' => $form_state['values']['name'],
+                'address' => $form_state['values']['address'],
+                'age' => $form_state['values']['age'],
+                'phone' => $form_state['values']['phone']
+            ))
+    ->condition('id', $form_state['values']['id'], '=')
+    ->execute();
+  
+  drupal_set_message(t('New record is updated successfully'));
+}
+
+function myschema_delete() {
+  $num_deleted = db_delete('employee')
+    ->condition('id', arg(1))
+    ->execute();
+  
+  return drupal_set_message(t('New record is deleted successfully'));
+}

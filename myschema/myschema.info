@@ -1,0 +1,6 @@
+name = Learning Schema
+description = "Install schema"
+package = Custom Module
+core = 7.x
+
+files[] = myschema.module
